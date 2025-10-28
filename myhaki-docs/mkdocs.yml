@@ -1,0 +1,61 @@
+site_name: MyHaki Technical Documentation
+site_url: https://myhaki.vercel.app/
+
+theme:
+  name: material
+  custom_dir: overrides
+  logo_light_mode: images/myhaki-logo.png
+  logo_dark_mode: images/icon-logo.png
+  favicon: images/icon-logo.png
+  palette:
+    - scheme: default
+      primary: white
+      accent: black
+      toggle:
+        icon: octicons/moon-16
+        name: Switch to dark mode
+    - scheme: slate
+      primary: black
+      accent: white
+      toggle:
+        icon: octicons/sun-16
+        name: Switch to light mode
+  font:
+    text: Poppins
+    code: Fira Mono
+  features:
+    - navigation.sections
+    - navigation.instant
+    - navigation.expand
+    - toc.integrate
+    - search.highlight
+    - search.suggest
+    - search.share
+  # custom_dir: docs/styles
+
+extra_css:
+  - styles/extra.css
+
+nav:
+  - Home: index.md
+  - How It Works: developer-docs.md
+  - Features: features.md
+  - Frontend Mobile: getting-started.md
+  - Frontend web: web.md
+  - Backend: api-reference.md
+  - Ai: ai.md
+  - Integrations: integrations.md
+  - Q/A Process: qa-process.md
+  # - Deployment Process: deployment-process.md
+  - Code Standards: code-standards.md
+  - Brand Guideline: brand-guideline.md
+
+  # - Changelog: changelog.md
+  - Compliance & Legal: compliance.md
+  # - Database Schema: schema.md
+
+markdown_extensions:
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+
