@@ -558,7 +558,7 @@ from langchain.vectorstores import Chroma
 from langchain.embeddings import HuggingFaceEmbeddings
 
 embeddings = HuggingFaceEmbeddings(model_name="nlpaueb/legal-bert-base-uncased")
-vectorstore = Chroma.from_documents(docs, embeddings) # Load pre-embedded chunks
+vectorstore = Chroma.from_documents(docs, embeddings)
 
 from langchain.chains import RetrievalQA
 from langchain.llms import GoogleGenerativeAI
@@ -566,7 +566,7 @@ from langchain.llms import GoogleGenerativeAI
 llm = GoogleGenerativeAI(model="gemini-2.5-flash")
 qa_chain = RetrievalQA.from_chain_type(llm, retriever=vectorstore.as_retriever(search_kwargs={"k": 5}))
 
-result = qa_chain.run("Classify this case: [query text]") # Outputs classification/urgency
+result = qa_chain.run("Classify this case: [query text]") 
 
 </pre>
 </div>
@@ -587,7 +587,7 @@ model = GenerativeModel('gemini-2.5-flash')
 prompt = "Analyze query and context for case_type, urgency, reasoning in JSON."
 response = model.generate_content(prompt)
 
-result = json.loads(response.text) # Parse for {"case_type": "civil", "urgency": "high", "reasoning": "..."}
+result = json.loads(response.text) # Parse for {"case_type": "civil", "urgency": "high", "reasoning": <br>"..."}
 
 </pre>
 </div>
@@ -789,7 +789,7 @@ docker push gcr.io/project-id/myhaki-agent:tag
 </ul>
 <div class="api-block">
 <pre class="api-dark">
-gcloud run deploy --image gcr.io/project-id/myhaki-agent:tag --platform managed --allow-unauthenticated --port 8080
+gcloud run deploy --image gcr.io/project-id/myhaki-agent:tag --platform managed --allow-unauthenticated <br>--port 8080
 </pre>
 </div>
 
