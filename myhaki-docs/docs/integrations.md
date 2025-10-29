@@ -197,7 +197,7 @@ Stores case, lawyer, and embedding data for semantic search and analytics.
 - [Gemini (Google AI) Docs](https://ai.google.dev/gemini)
 - [Celery & Redis Docs](https://docs.celeryproject.org/en/stable/)
 - [pgvector for PostgreSQL](https://github.com/pgvector/pgvector)
-- [MyHaki API Reference](api-reference.md)
+- [MyHaki API Reference](backend.md)
 
 ---
 

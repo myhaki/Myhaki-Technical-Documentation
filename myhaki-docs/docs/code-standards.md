@@ -43,8 +43,8 @@
 ## <span style="font-weight: 600; color: #A87352;">References</span>
 
 - [Brand Guideline](images/brand-guideline.png)
-- [API Reference](api-reference.md)
-- [Developer Docs](developer-docs.md)
+- [API Reference](backend.md)
+- [Developer Docs](how-it-works.md)
 - [QA Process](qa-process.md)
 
 ---

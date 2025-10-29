@@ -178,8 +178,8 @@ Authorization: Token {your_token_here}
 
 ## <span style="font-weight: 300; font-size: 1.2em; color: #621616;">More Information</span>
 
-- For a full list of endpoints and model schemas, see [Developer Docs](developer-docs.md).  
-- For platform architecture, AI, and integrations, see [Developer Docs](developer-docs.md) and [Integrations](integrations.md).  
+- For a full list of endpoints and model schemas, see [Developer Docs](how-it-works.md).  
+- For platform architecture, AI, and integrations, see [Developer Docs](how-it-works.md) and [Integrations](integrations.md).  
 - For brand assets and guidelines, contact the design team or see [Brand Guideline Screenshot](images/brand-guideline.png).
 
 ---
@@ -222,4 +222,4 @@ Authorization: Token {your_token_here}
 - [Gemini (Google AI) Docs](https://ai.google.dev/gemini)
 - [Celery & Redis Docs](https://docs.celeryproject.org/en/stable/)
 - [pgvector for PostgreSQL](https://github.com/pgvector/pgvector)
-- [MyHaki API Reference](api-reference.md)
+- [MyHaki API Reference](backend.md)

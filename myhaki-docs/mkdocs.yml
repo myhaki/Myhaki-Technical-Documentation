@@ -31,28 +31,24 @@ theme:
     - search.highlight
     - search.suggest
     - search.share
-  # custom_dir: docs/styles
+
 
 extra_css:
   - styles/extra.css
 
 nav:
   - Home: index.md
-  - How It Works: developer-docs.md
+  - How It Works: how-it-works.md
   - Features: features.md
-  - Frontend Mobile: getting-started.md
-  - Frontend web: web.md
-  - Backend: api-reference.md
-  - Ai: ai.md
+  - Frontend Mobile: frontend-mobile.md
+  - Frontend web: frontend-web.md
+  - Backend: backend.md
+  - AI: ai.md
   - Integrations: integrations.md
   - Q/A Process: qa-process.md
-  # - Deployment Process: deployment-process.md
   - Code Standards: code-standards.md
   - Brand Guideline: brand-guideline.md
-
-  # - Changelog: changelog.md
   - Compliance & Legal: compliance.md
-  # - Database Schema: schema.md
 
 markdown_extensions:
   - pymdownx.tasklist:

@@ -28,7 +28,7 @@
 
 <div class="button-container">
   <a href="https://my-haki-informational-website.vercel.app/" class="md-button">Informational Website</a>
-  <a href="getting-started/" class="md-button">See what's next</a>
+  <a href="how-it-works/" class="md-button">See what's next</a>
 </div>
 ---
 
@@ -67,7 +67,7 @@
 
 <div class="myhaki-card">
   <h3>API-First Architecture</h3>
-  <p>All features accessible via robust REST APIs (<a href="api-reference/">see API Reference</a>).</p>
+  <p>All features accessible via robust REST APIs (<a href="backend/">see API Reference</a>).</p>
 </div>
 
 ---
@@ -88,7 +88,7 @@
 ---
 
 > _Learn more about MyHaki on our [Website](https://my-haki-informational-website.vercel.app/)._  
-> _Ready to get started? [Start here](getting-started.md)!_
+> _Ready to get started? [Start here](how-it-works.md)!_
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
