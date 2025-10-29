@@ -98,8 +98,8 @@ _Response:_
 
 ---
 
-![LSK Forgot Password](images/forgot-password.png) 
-![LSK Verify OTP](images/verify-code.png)
+![LSK Forgot Password](images/forgot-password-web.png) 
+![LSK Verify OTP](images/reset-password-web.png)
 
 
 
