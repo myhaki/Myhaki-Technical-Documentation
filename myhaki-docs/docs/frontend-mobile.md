@@ -1,4 +1,4 @@
-# Getting Started
+# Mobile
 
 Welcome to **MyHaki**! This guide walks you through onboarding, authentication, and password management for Applicants (Detainees/Families), Lawyers, and LSK Admins—with real API snippets and backend code.
 

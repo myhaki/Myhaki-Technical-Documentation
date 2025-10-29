@@ -1,4 +1,4 @@
-# Developer Docs
+# How It Works
 
 Comprehensive documentation for developers building, testing, and deploying the MyHaki platform.  
 Learn about architecture, workflows, integrations, and best practices for reliable legal tech.
