@@ -32,6 +32,40 @@ embeddings = outputs.last_hidden_state.mean(dim=1).numpy().tolist()
 **Apply:** Embed legal chunks (e.g., court judgments) and store in pgvector; query similarity for RAG retrieval.
 
 ---
+### all-mpnet-base-v2  
+all-mpnet-base-v2 :- is a type of sentence transformer model used to convert detainee case descriptions into numerical embeddings, enabling the AI agent to understand their meaning. 
+
+**How to Use:**  
+<div class="api-block">
+<pre class="api-dark">
+from google.generativeai import GenerativeModel, configure
+from sentence_transformers import SentenceTransformer
+
+@functools.lru_cache(maxsize=1)
+def get_embedding_model():
+    return SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
+
+def embed_query(query: str) -> list[float]:
+    model = get_embedding_model()
+    return model.encode(query).tolist()
+
+def retrieve_relevant_chunks(query: str, top_k: int = 5):
+    query_embedding = embed_query(query)
+    response = supabase.rpc(
+        "match_legal_embeddings",
+        {"query_embedding": query_embedding, "match_count": top_k}
+    ).execute()
+    docs = [row["document"] for row in response.data] if response.data else []
+    metas = [row["metadata"] for row in response.data] if response.data else []
+    return docs, metas 
+
+</pre>
+</div>
+
+
+**Apply:** convert detainee case descriptions into numerical embeddings.
+
+
 
 ### RAG Pipeline  
 Retrieval-Augmented Generation for context-aware case processing (LangChain + Vector Search).  
@@ -39,24 +73,30 @@ Retrieval-Augmented Generation for context-aware case processing (LangChain + Ve
 **How to Use:**  
 <div class="api-block">
 <pre class="api-dark">
-from langchain.vectorstores import Chroma
-from langchain.embeddings import HuggingFaceEmbeddings
+from google.generativeai import GenerativeModel, configure
+from sentence_transformers import SentenceTransformer
 
-embeddings = HuggingFaceEmbeddings(model_name="nlpaueb/legal-bert-base-uncased")
-vectorstore = Chroma.from_documents(docs, embeddings)
 
-from langchain.chains import RetrievalQA
-from langchain.llms import GoogleGenerativeAI
 
-llm = GoogleGenerativeAI(model="gemini-2.5-flash")
-qa_chain = RetrievalQA.from_chain_type(llm, retriever=vectorstore.as_retriever(search_kwargs={"k": 5}))
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise ValueError("Missing GEMINI_API_KEY in .env file")
+configure(api_key=api_key)
+gemini_model = GenerativeModel('gemini-2.5-flash')
 
-result = qa_chain.run("Classify this case: [query text]") 
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+VECTOR_SIZE = int(os.getenv("VECTOR_SIZE", 768))
+
+@functools.lru_cache(maxsize=1)
+def get_embedding_model():
+    return SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
 </pre>
 </div>
 
-**Apply:** Chain with Gemini for JSON outputs (case_type, urgency); handle multilingual by prompt engineering.
+**Apply:** Chain with Gemini for JSON outputs (case_type, urgency).
 
 ---
 
@@ -72,11 +112,44 @@ import json
 configure(api_key="your_api_key")
 model = GenerativeModel('gemini-2.5-flash')
 
-prompt = "Analyze query and context for case_type, urgency, reasoning in JSON."
-response = model.generate_content(prompt)
+prompt =""" You are a legal assistant AI.
+Analyze the following context and query, then return ONLY the following fields in JSON format:
+- case_type: inferred case type(s)
+- urgency: classify as "urgent" or "normal"
+- reasoning: a short explanation of why you classified it this way
+ Context:
+{context}
 
-result = json.loads(response.text) # Parse for {"case_type": "civil", "urgency": "high", "reasoning": <br>"..."}
+Metadata:
+{metadata_context}
 
+Query:
+{query} 
+
+Respond strictly in JSON with keys: case_type, urgency, reasoning. Do not include anything else.
+"""
+
+    response = gemini_model.generate_content(prompt)
+    raw_text = response.text.strip()
+
+    if raw_text.startswith("```"):
+        raw_text = raw_text.strip("`")
+        if raw_text.lower().startswith("json"):
+            raw_text = raw_text[4:].strip()
+
+    try:
+        result = json.loads(raw_text)
+    except json.JSONDecodeError:
+        result = {
+            "case_type": None,
+            "urgency": None,
+            "reasoning": raw_text
+        }
+
+    if trial_date:
+        result["urgency"] = determine_urgency_from_date(trial_date)
+
+    return result"
 </pre>
 </div>
 
@@ -136,13 +209,26 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-@app.post("/query")
-def query_case(q: str):
-results = vectorstore.similarity_search(q, k=5)
-return {
-"chunks": results,
-"metadatas": [r.metadata for r in results]
-}
+@app.get("/")
+def health_check():
+    return {"status": "ok"}
+
+class CaseInput(BaseModel):
+    case_description: str
+    trial_date: str  
+
+
+@app.post("/predict/")
+def predict_case(data: CaseInput):
+    query = f"Case: {data.case_description}"
+    results = run_rag(query, trial_date=data.trial_date)
+    return {
+        "input": {
+            "case_description": data.case_description,
+            "trial_date": data.trial_date
+        },
+        "prediction": results
+    }
 </pre>
 </div>
 ---
@@ -191,11 +277,11 @@ return SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
 
 - **Platform:** Google Cloud Platform (Cloud Run) for scalable, serverless hosting. Selected after Heroku’s space limits to manage variable LSK loads.
 
-- **Build:** Dockerized FastAPI microservice providing endpoints (e.g., case query/classification), using stateless containers for fast scaling.
+- **Build:** Dockerized FastAPI microservice providing endpoints, using stateless containers for fast scaling.
 
 - **Environment Variables:** Securely managed in Google Cloud Secret Manager (e.g., `GEMINI_API_KEY`, `SUPABASE_URL`); loaded in code with `os.getenv` to avoid exposure.
 
-- **Scaling:** Auto-scales via Cloud Run with 1Gi memory and port 8080; handles spikes from user submissions.
+- **Scaling:** Auto-scales via Cloud Run with 2Gi memory and port 8080; handles spikes from user submissions.
 
 - **Monitoring:** Google Cloud Monitoring for logs and alerts (e.g., >5s latency alerts); health check implemented with `curl` for uptime.
 
@@ -210,31 +296,55 @@ return SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
 **Sample YAML snippet:**
 <div class="api-block">
 <pre class="api-dark">
-name: Deploy FastAPI App
+name: Deploy FastAPI App from Docker Hub to Cloud Run
+
 on:
-push:
-branches:
-- feature/myhaki_predictive_agent
+  push:
+    branches:
+      - feature/myhaki_predictive_agent  
 
 jobs:
-deploy:
-runs-on: ubuntu-latest
-steps:
-- uses: actions/checkout@v4
-- uses: google-github-actions/auth@v2
-with:
-credentials_json: '${{ secrets.GCP_SA_KEY }}'
-- uses: google-github-actions/setup-gcloud@v2
-- run: |
-gcloud run deploy myhaki-agent
---image docker.io/${{ secrets.IMAGE_NAME }}:tag
---project "${{ secrets.GCP_PROJECT_ID }}"
---region europe-west1
---allow-unauthenticated
---port 8080
---memory 1Gi
---set-env-vars GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }},SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+  deploy:
+    name: Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
 
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      VECTOR_SIZE: ${{ secrets.VECTOR_SIZE }}
+      IMAGE_NAME: dockerhub account user name/fastapi-rag  
+      REGION: europe-west1
+      SERVICE_NAME: myhaki-agent
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy $SERVICE_NAME \
+            --image "docker.io/${IMAGE_NAME}:feature-myhaki_predictive_agent" \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --region "$REGION" \
+            --allow-unauthenticated \
+            --port 8080 \
+            --memory 1Gi \
+            --set-env-vars GEMINI_API_KEY=${GEMINI_API_KEY},
+            SUPABASE_DB_URL=${SUPABASE_DB_URL},
+            SUPABASE_URL=${SUPABASE_URL},
+            SUPABASE_KEY=${SUPABASE_KEY},
+            VECTOR_SIZE=${VECTOR_SIZE}
 </pre>
 </div>
 
@@ -244,35 +354,19 @@ gcloud run deploy myhaki-agent
 <div class="api-block">
 <pre class="api-dark">
   Build and push to Google Container Registry (GCR):  
-docker tag myhaki-agent gcr.io/project-id/myhaki-agent:tag
-docker push gcr.io/project-id/myhaki-agent:tag
 
-</pre>
-</div>
-- **Auto-Deployment:**  
-<div class="api-block">
-<pre class="api-dark">
-gcloud run deploy --image gcr.io/project-id/myhaki-agent:tag --platform managed --allow-unauthenticated <br>--port 8080
-</pre>
-</div>
+docker build -t dockerhub account user name/fastapi-rag:feature-myhaki_predictive_agent .
+docker push dockerhub account user name/fastapi-rag:feature-myhaki_predictive_agent
 
-
----
-
-## Secrets Access at Runtime
-
-<div class="api-block">
-<pre class="api-dark">
-from google.cloud import secretmanager
-
-client = secretmanager.SecretManagerServiceClient()
-response = client.access_secret_version(name="projects/project-id/secrets/gemini-key/versions/latest")
-api_key = response.payload.data.decode("UTF-8")
-
+git add.
+git commit -m"feat: deploy myhaki agent"
+git push -u origin feature/myhaki_predictive_agent
 </pre>
 </div>
 
-- **Explanation:** Fetches secrets at runtime to prevent leaks.
+
+
+
 
 ---
 
@@ -282,7 +376,6 @@ api_key = response.payload.data.decode("UTF-8")
 <div class="api-block">
 <pre class="api-dark">
 HEALTHCHECK CMD curl --fail http://localhost:8080/ || exit 1
-
 </pre>
 </div>
 
